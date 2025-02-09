@@ -28,47 +28,54 @@ class _GroceryListState extends State<GroceryList> {
   void _loadItems() async {
     final url = Uri.https('dummy-backend-b3536-default-rtdb.firebaseio.com',
         'shopping-list.json');
-    final response = await http.get(
-      url,
-      headers: {'Content-type': 'application/json'},
-    );
 
-    if (response.statusCode >= 400) {
-      setState(() {
-        _error = 'Failed to fetch data. Please try again later';
-      });
-    }
+    try {
+      final response = await http.get(
+        url,
+        headers: {'Content-type': 'application/json'},
+      );
 
-    print(response.statusCode);
-    if (response.body == 'null') {
+      if (response.statusCode >= 400) {
+        setState(() {
+          _error = 'Failed to fetch data. Please try again later';
+        });
+      }
+
+      print(response.statusCode);
+      if (response.body == 'null') {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      final Map<String, dynamic> shoppingList = json.decode(response.body);
+
+      final List<GroceryItem> loadedItems = [];
+      for (final item in shoppingList.entries) {
+        final category = categories.entries
+            .firstWhere(
+              (catItem) => catItem.value.title == item.value['category'],
+            )
+            .value;
+        loadedItems.add(
+          GroceryItem(
+            id: item.key,
+            name: item.value['name'],
+            quantity: item.value['quantity'],
+            category: category,
+          ),
+        );
+      }
       setState(() {
+        _groceryItems = loadedItems;
         _isLoading = false;
       });
-      return;
+      print(shoppingList);
+    } catch (error) {
+      setState(() {
+        _error = 'Something went wrong! Please try again later';
+      });
     }
-    final Map<String, dynamic> shoppingList = json.decode(response.body);
-
-    final List<GroceryItem> loadedItems = [];
-    for (final item in shoppingList.entries) {
-      final category = categories.entries
-          .firstWhere(
-            (catItem) => catItem.value.title == item.value['category'],
-          )
-          .value;
-      loadedItems.add(
-        GroceryItem(
-          id: item.key,
-          name: item.value['name'],
-          quantity: item.value['quantity'],
-          category: category,
-        ),
-      );
-    }
-    setState(() {
-      _groceryItems = loadedItems;
-      _isLoading = false;
-    });
-    print(shoppingList);
   }
 
   void _addItem() async {
