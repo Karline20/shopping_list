@@ -81,10 +81,18 @@ class _GroceryListState extends State<GroceryList> {
     });
   }
 
-  void _removeItem(GroceryItem item) {
-    setState(() {
-      _groceryItems.remove(item);
-    });
+  void _removeItem(GroceryItem item) async {
+    final index = _groceryItems.indexOf(item);
+    final url = Uri.https('dummy-backend-b3536-default-rtdb.firebaseio.com',
+        'shopping-list/${item.id}.json');
+    final response = await http.delete(url);
+
+    if (response.statusCode >= 400) {
+      //Optional: show error message
+      setState(() {
+        _groceryItems.insert(index, item);
+      });
+    }
   }
 
   @override
